@@ -1,0 +1,20 @@
+#!/bin/bash
+# email lockout report to sysadmin for review
+tail -Fn0 /opt/zimbra/log/audit.log | \
+while read line ; do
+    echo "$line" | grep -q "error=account lockout"
+    if [ $? = 0 ]
+    then
+        # prep log file for emailing
+        # edit the two email addresses in the following two lines for your system
+        echo "to:support@example.com" > /var/log/tmp_lockout
+        echo "from:root@mail.example.com" >> /var/log/tmp_lockout
+        echo "subject:Account LOCKOUT report :: zimbra" >> /var/log/tmp_lockout
+        echo "Created on `date`" >> /var/log/tmp_lockout
+        echo "++++++++++++" >> /var/log/tmp_lockout
+        echo "Account lockouts" >> /var/log/tmp_lockout
+        echo "$line" >> /var/log/tmp_lockout
+        # mail report
+        /opt/zimbra/postfix/sbin/sendmail -t < /var/log/tmp_lockout
+    fi
+done
